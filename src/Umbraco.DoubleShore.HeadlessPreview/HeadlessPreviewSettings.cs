@@ -1,4 +1,4 @@
-namespace Umbraco.DoubleShore.HeadlessPreview
+﻿namespace Umbraco.DoubleShore.HeadlessPreview
 {
     /// <summary>
     /// Configuration settings for headless preview.
@@ -29,8 +29,23 @@ namespace Umbraco.DoubleShore.HeadlessPreview
 
         /// <summary>
         /// Label displayed in the preview dropdown menu.
+        /// This can be a plain text string OR a dictionary key for localization.
+        /// 
+        /// Examples:
+        /// - Plain text: "Preview on Frontend"
+        /// - Dictionary key: "#HeadlessPreview_Label" (will look up in Umbraco dictionary)
+        /// 
+        /// To localize: Create a dictionary item with key "HeadlessPreview_Label" in Umbraco
+        /// and use "#HeadlessPreview_Label" as the value here.
         /// </summary>
         public string PreviewLabel { get; set; } = "Preview on Frontend";
+
+        /// <summary>
+        /// Whether to use Umbraco dictionary for label localization.
+        /// When true and PreviewLabel starts with "#", it will attempt to
+        /// look up the label in Umbraco's dictionary system.
+        /// </summary>
+        public bool UseLocalization { get; set; } = true;
 
         /// <summary>
         /// Whether headless preview is enabled.
@@ -39,4 +54,3 @@ namespace Umbraco.DoubleShore.HeadlessPreview
         public bool Enabled { get; set; } = true;
     }
 }
-

@@ -1,7 +1,8 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Routing;
+using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
 using Microsoft.Extensions.Logging;
 
@@ -9,58 +10,41 @@ namespace Umbraco.DoubleShore.HeadlessPreview
 {
     /// <summary>
     /// Custom URL provider that adds a preview URL pointing to your headless frontend.
-    /// When an editor clicks "Preview" in the Umbraco backoffice, this provider
-    /// generates a URL that enables draft mode and redirects to the content.
     /// </summary>
-    /// <remarks>
-    /// Part of the Umbraco.DoubleShore.HeadlessPreview package.
-    /// For documentation and support, visit https://double-shore.com
-    /// </remarks>
     public class HeadlessPreviewUrlProvider : IUrlProvider
     {
         private readonly HeadlessPreviewSettings _settings;
         private readonly IUmbracoContextAccessor _umbracoContextAccessor;
         private readonly IPublishedUrlProvider _publishedUrlProvider;
+        private readonly IDictionaryItemService _dictionaryItemService;
         private readonly ILogger<HeadlessPreviewUrlProvider> _logger;
 
         public HeadlessPreviewUrlProvider(
             IOptions<HeadlessPreviewSettings> settings,
             IUmbracoContextAccessor umbracoContextAccessor,
             IPublishedUrlProvider publishedUrlProvider,
+            IDictionaryItemService dictionaryItemService,
             ILogger<HeadlessPreviewUrlProvider> logger)
         {
             _settings = settings.Value;
             _umbracoContextAccessor = umbracoContextAccessor;
             _publishedUrlProvider = publishedUrlProvider;
+            _dictionaryItemService = dictionaryItemService;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Unique alias for this URL provider - must match the urlProviderAlias in umbraco-package.json.
-        /// </summary>
         public string Alias => "HeadlessPreview";
 
-        /// <summary>
-        /// Not used for regular URL generation - we only provide preview URLs.
-        /// </summary>
         public UrlInfo? GetUrl(IPublishedContent content, UrlMode mode, string? culture, Uri current)
             => null;
 
-        /// <summary>
-        /// Not used - we don't provide alternative URLs for content.
-        /// </summary>
         public IEnumerable<UrlInfo> GetOtherUrls(int id, Uri current)
             => [];
 
-        /// <summary>
-        /// Generates a preview URL that redirects to your frontend with draft mode enabled.
-        /// </summary>
-        public Task<UrlInfo?> GetPreviewUrlAsync(IContent content, string? culture, string? segment)
+        public async Task<UrlInfo?> GetPreviewUrlAsync(IContent content, string? culture, string? segment)
         {
             if (!IsConfigured())
-            {
-                return Task.FromResult<UrlInfo?>(null);
-            }
+                return null;
 
             try
             {
@@ -70,33 +54,65 @@ namespace Umbraco.DoubleShore.HeadlessPreview
                 {
                     _logger.LogDebug("Could not determine content path for preview: {Name} ({Culture})", 
                         content.Name, culture);
-                    return Task.FromResult<UrlInfo?>(null);
+                    return null;
                 }
 
                 var previewUrl = BuildPreviewUrl(contentPath, content.Key, culture);
+                var label = await GetLocalizedLabelAsync(culture);
 
                 _logger.LogDebug("Generated headless preview URL for {Name}: {Url}", content.Name, previewUrl);
 
-                return Task.FromResult<UrlInfo?>(new UrlInfo(
+                return new UrlInfo(
                     url: new Uri(previewUrl),
                     provider: Alias,
                     culture: culture,
-                    message: _settings.PreviewLabel,
-                    isExternal: true));
+                    message: label,
+                    isExternal: true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating preview URL for {Name}", content.Name);
-                return Task.FromResult<UrlInfo?>(null);
+                return null;
             }
+        }
+
+        private async Task<string> GetLocalizedLabelAsync(string? culture)
+        {
+            var label = _settings.PreviewLabel;
+
+            if (_settings.UseLocalization && !string.IsNullOrEmpty(label) && label.StartsWith('#'))
+            {
+                var dictionaryKey = label.TrimStart('#');
+                
+                try
+                {
+                    var dictionaryItem = await _dictionaryItemService.GetAsync(dictionaryKey);
+                    if (dictionaryItem != null)
+                    {
+                        var translation = dictionaryItem.Translations
+                            .FirstOrDefault(t => string.Equals(t.LanguageIsoCode, culture, StringComparison.OrdinalIgnoreCase));
+                        
+                        if (translation != null && !string.IsNullOrEmpty(translation.Value))
+                            return translation.Value;
+
+                        var fallback = dictionaryItem.Translations.FirstOrDefault(t => !string.IsNullOrEmpty(t.Value));
+                        if (fallback != null)
+                            return fallback.Value!;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to get dictionary item for key: {Key}", dictionaryKey);
+                }
+            }
+
+            return label;
         }
 
         private string? GetContentPath(IContent content, string? culture)
         {
             if (!_umbracoContextAccessor.TryGetUmbracoContext(out var umbracoContext))
-            {
                 return GetFallbackPath(content, culture);
-            }
 
             var publishedContent = umbracoContext.Content?.GetById(content.Key);
             
@@ -104,9 +120,7 @@ namespace Umbraco.DoubleShore.HeadlessPreview
             {
                 var url = _publishedUrlProvider.GetUrl(publishedContent, UrlMode.Relative, culture);
                 if (!string.IsNullOrEmpty(url) && url != "#")
-                {
                     return url;
-                }
             }
 
             return GetFallbackPath(content, culture);
@@ -141,4 +155,3 @@ namespace Umbraco.DoubleShore.HeadlessPreview
         }
     }
 }
-

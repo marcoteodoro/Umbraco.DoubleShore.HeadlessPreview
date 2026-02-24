@@ -14,8 +14,6 @@ Built with ❤️ by [Double Shore](https://double-shore.com) - Your trusted Umb
 
 **Umbraco.DoubleShore.HeadlessPreview** seamlessly connects Umbraco's backoffice to your frontend application, enabling content editors to preview unpublished changes in real-time with a single click.
 
-![Preview Demo](docs/preview-demo.gif)
-
 ### 🎯 Perfect for Headless CMS Setups
 
 When you decouple Umbraco from your frontend, you lose the native preview functionality. This package brings it back - better than ever.
@@ -28,8 +26,9 @@ When you decouple Umbraco from your frontend, you lose the native preview functi
 |---------|-------------|
 | **One-Click Preview** | Preview button appears directly in Umbraco's content editor |
 | **Any Frontend** | Works with Next.js, Nuxt, Astro, SvelteKit, Remix, and more |
-| **Multi-Language** | Full support for multilingual content preview |
+| **Multi-Language** | Full support for multilingual content preview with localized labels |
 | **Draft Mode** | Integrates with your frontend's draft/preview mode |
+| **Localization** | Preview label can be localized via Umbraco dictionary |
 | **Zero Config** | Just add your frontend URL - we handle the rest |
 | **Lightweight** | Minimal footprint, maximum performance |
 
@@ -60,14 +59,57 @@ Add to your `appsettings.json`:
     "BaseUrl": "https://your-frontend.com",
     "PreviewSecret": "your-super-secret-key",
     "PreviewEndpoint": "/api/preview",
-    "PreviewLabel": "Preview on Frontend"
+    "PreviewLabel": "Preview on Frontend",
+    "UseLocalization": true
   }
 }
 ```
 
 ### 2. Implement Frontend Endpoint
 
-Create a preview API endpoint on your frontend. Here's an example for **Next.js**:
+Create a preview API endpoint on your frontend. See examples below for each framework.
+
+### 3. Preview!
+
+Click **"Preview on Frontend"** in Umbraco's content editor to see your unpublished changes.
+
+---
+
+## 🌍 Localization
+
+To localize the preview label:
+
+1. Create a dictionary item in Umbraco with key `HeadlessPreview_Label`
+2. Add translations for each language
+3. Set `PreviewLabel` to `#HeadlessPreview_Label` in appsettings.json
+
+```json
+{
+  "HeadlessPreview": {
+    "PreviewLabel": "#HeadlessPreview_Label",
+    "UseLocalization": true
+  }
+}
+```
+
+---
+
+## 🔧 Configuration Options
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `BaseUrl` | Your frontend URL | *required* |
+| `PreviewSecret` | Shared secret for authentication | *required* |
+| `PreviewEndpoint` | Path to your preview API | `/api/preview` |
+| `PreviewLabel` | Button label (or dictionary key with #) | `Preview on Frontend` |
+| `UseLocalization` | Enable dictionary lookup for label | `true` |
+| `Enabled` | Enable/disable the package | `true` |
+
+---
+
+## 🖼️ Frontend Examples
+
+### Next.js (App Router)
 
 ```typescript
 // app/api/preview/route.ts
@@ -79,46 +121,53 @@ export async function GET(request: Request) {
   const secret = searchParams.get('secret');
   const path = searchParams.get('path');
 
-  // Validate secret
   if (secret !== process.env.PREVIEW_SECRET) {
     return new Response('Invalid token', { status: 401 });
   }
 
-  // Enable draft mode
   const draft = await draftMode();
   draft.enable();
-
-  // Redirect to the content
   redirect(path || '/');
 }
 ```
 
-### 3. Preview!
+### Nuxt 3
 
-That's it! Click **"Preview on Frontend"** in Umbraco's content editor to see your unpublished changes.
+```typescript
+// server/api/preview.ts
+export default defineEventHandler(async (event) => {
+  const query = getQuery(event);
+  
+  if (query.secret !== process.env.PREVIEW_SECRET) {
+    throw createError({ statusCode: 401, message: 'Invalid token' });
+  }
 
----
+  // Enable preview mode via cookie
+  setCookie(event, 'preview-mode', 'true', { path: '/' });
+  
+  return sendRedirect(event, query.path as string || '/');
+});
+```
 
-## 🔧 Configuration Options
+### Astro
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `BaseUrl` | Your frontend URL | *required* |
-| `PreviewSecret` | Shared secret for authentication | *required* |
-| `PreviewEndpoint` | Path to your preview API | `/api/preview` |
-| `PreviewLabel` | Button label in Umbraco | `Preview on Frontend` |
-| `Enabled` | Enable/disable the package | `true` |
+```typescript
+// src/pages/api/preview.ts
+import type { APIRoute } from 'astro';
 
----
+export const GET: APIRoute = async ({ request, cookies, redirect }) => {
+  const url = new URL(request.url);
+  const secret = url.searchParams.get('secret');
+  const path = url.searchParams.get('path');
 
-## 🖼️ Frontend Examples
+  if (secret !== import.meta.env.PREVIEW_SECRET) {
+    return new Response('Invalid token', { status: 401 });
+  }
 
-We provide example implementations for popular frameworks:
-
-- [Next.js (App Router)](examples/nextjs/)
-- [Nuxt 3](examples/nuxt/)
-- [Astro](examples/astro/)
-- [SvelteKit](examples/sveltekit/)
+  cookies.set('preview-mode', 'true', { path: '/' });
+  return redirect(path || '/');
+};
+```
 
 ---
 
@@ -154,17 +203,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Get in Touch
 
 - 🌐 Website: [double-shore.com](https://double-shore.com)
-- 📧 Email: hello@double-shore.com
-- 🐦 Twitter: [@DoubleShore](https://twitter.com/DoubleShore)
-- 💼 LinkedIn: [Double Shore](https://linkedin.com/company/double-shore)
+- 📧 Email: info@double.pt
+- 💼 LinkedIn: [Double Design and Development](https://www.linkedin.com/company/double-design-and-development)
 
 ---
 
 <p align="center">
-  <a href="https://double-shore.com">
-    <img src="icon.png" alt="Double Shore" width="100">
-  </a>
-  <br>
   <strong>Double Shore</strong>
   <br>
   <em>Digital Solutions Built with Clarity</em>
