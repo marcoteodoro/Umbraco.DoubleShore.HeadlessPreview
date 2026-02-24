@@ -1,0 +1,22 @@
+﻿{
+  "$schema": "../../umbraco-package-schema.json",
+  "name": "Umbraco.DoubleShore.HeadlessPreview",
+  "version": "1.0.0",
+  "publisher": "Double Shore",
+  "license": "MIT",
+  "extensions": [
+    {
+      "type": "workspaceActionMenuItem",
+      "kind": "previewOption",
+      "alias": "DoubleShore.HeadlessPreview.PreviewOption",
+      "name": "Preview on Frontend",
+      "forWorkspaceActions": "Umb.WorkspaceAction.Document.SaveAndPreview",
+      "weight": 200,
+      "meta": {
+        "label": "Preview on Frontend",
+        "icon": "icon-out",
+        "urlProviderAlias": "HeadlessPreview"
+      }
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <StaticWebAssetBasePath>/</StaticWebAssetBasePath>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- NuGet Package Metadata -->
+  <PropertyGroup>
+    <PackageId>Umbraco.DoubleShore.HeadlessPreview</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Double Shore - Marco Teodoro</Authors>
+    <Company>Double Shore</Company>
+    <Product>Umbraco Headless Preview</Product>
+    <Title>Umbraco Headless Preview - Instant Frontend Preview for Headless CMS</Title>
+    <Description>
+🚀 Enable instant content preview for your headless Umbraco setup!
+
+Double Shore's Headless Preview package seamlessly connects Umbraco's backoffice to your frontend application, allowing content editors to preview unpublished changes in real-time.
+
+✨ KEY FEATURES:
+• One-click preview from Umbraco backoffice
+• Works with ANY frontend: Next.js, Nuxt, Astro, SvelteKit, Remix, and more
+• Supports multi-language content preview
+• Zero configuration required - just add your frontend URL
+• Draft mode integration for accurate preview of unpublished content
+• Lightweight and performant
+
+📦 QUICK START:
+1. Install the package
+2. Add your frontend URL to appsettings.json
+3. Implement a simple /api/preview endpoint on your frontend
+4. Done! Click "Preview on Frontend" in Umbraco
+
+Built with ❤️ by Double Shore - Your trusted Umbraco specialists.
+Visit https://double-shore.com for consulting, development, and support.
+    </Description>
+    <PackageProjectUrl>https://double-shore.com</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/marcoteodoro/Umbraco.DoubleShore.HeadlessPreview</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>umbraco;umbraco-package;headless;headless-cms;preview;draft-mode;nextjs;nuxt;astro;sveltekit;remix;jamstack;decoupled;content-preview;double-shore</PackageTags>
+    <Copyright>Copyright (c) Double Shore 2024-$([System.DateTime]::Now.Year)</Copyright>
+    <PackageReleaseNotes>https://github.com/marcoteodoro/Umbraco.DoubleShore.HeadlessPreview/releases</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Umbraco.Cms.Web.Website" Version="17.*" />
+    <PackageReference Include="Umbraco.Cms.Web.Common" Version="17.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Dont include the client folder as part of packaging nuget build -->
+    <Content Remove="Client\**" />
+    
+    <!-- Include umbraco-package.json for App_Plugins -->
+    <None Include="Client\public\umbraco-package.json" Pack="true" PackagePath="contentFiles\any\net10.0\wwwroot\App_Plugins\Umbraco.DoubleShore.HeadlessPreview\" />
+    
+    <!-- Package metadata files -->
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+</Project>
