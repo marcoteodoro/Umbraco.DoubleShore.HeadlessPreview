@@ -1,0 +1,36 @@
+﻿{
+  "$schema": "https://marketplace.umbraco.com/umbraco-marketplace-schema.json",
+  "title": "Umbraco Headless Preview",
+  "description": "Seamless preview mode integration for headless CMS setups. Works with Next.js, Nuxt, Astro, and any frontend.",
+  "authors": [
+    {
+      "name": "Double Shore",
+      "url": "https://double-shore.com"
+    }
+  ],
+  "packageType": "UmbracoPlugin",
+  "license": {
+    "type": "MIT"
+  },
+  "category": "Headless",
+  "tags": [
+    "headless",
+    "preview",
+    "nextjs",
+    "nuxt",
+    "astro",
+    "draft-mode",
+    "decoupled"
+  ],
+  "nugetPackageId": "Umbraco.DoubleShore.HeadlessPreview",
+  "sourcecodeUrl": "https://github.com/marcoteodoro/Umbraco.DoubleShore.HeadlessPreview",
+  "documentationUrl": "https://github.com/marcoteodoro/Umbraco.DoubleShore.HeadlessPreview#readme",
+  "issuesUrl": "https://github.com/marcoteodoro/Umbraco.DoubleShore.HeadlessPreview/issues",
+  "umbracoVersions": [
+    {
+      "major": 17,
+      "minor": 0
+    }
+  ],
+  "relatedPackages": []
+}
