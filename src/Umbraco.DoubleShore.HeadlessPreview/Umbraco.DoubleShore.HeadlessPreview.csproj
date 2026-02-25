@@ -10,7 +10,7 @@
 
   <!-- NuGet Package Metadata -->
   <PropertyGroup>
-    <PackageId>Umbraco.DoubleShore.HeadlessPreview</PackageId>
+    <PackageId>DoubleShore.Umbraco.HeadlessPreview</PackageId>
     <Version>1.0.0</Version>
     <Authors>Double Shore - Marco Teodoro</Authors>
     <Company>Double Shore</Company>

@@ -2,7 +2,7 @@
 
 **Instant frontend preview for your headless Umbraco setup**
 
-[![NuGet](https://img.shields.io/nuget/v/Umbraco.DoubleShore.HeadlessPreview.svg)](https://www.nuget.org/packages/Umbraco.DoubleShore.HeadlessPreview/)
+[![NuGet](https://img.shields.io/nuget/v/DoubleShore.Umbraco.HeadlessPreview.svg)](https://www.nuget.org/packages/DoubleShore.Umbraco.HeadlessPreview/)
 [![Umbraco Marketplace](https://img.shields.io/badge/Umbraco-Marketplace-blue)](https://marketplace.umbraco.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -12,7 +12,7 @@ Built with ❤️ by [Double Shore](https://double-shore.com) - Your trusted Umb
 
 ## ✨ What is this?
 
-**Umbraco.DoubleShore.HeadlessPreview** seamlessly connects Umbraco's backoffice to your frontend application, enabling content editors to preview unpublished changes in real-time with a single click.
+**DoubleShore.Umbraco.HeadlessPreview** seamlessly connects Umbraco's backoffice to your frontend application, enabling content editors to preview unpublished changes in real-time with a single click.
 
 ### 🎯 Perfect for Headless CMS Setups
 
@@ -37,12 +37,12 @@ When you decouple Umbraco from your frontend, you lose the native preview functi
 ## 📦 Installation
 
 ```bash
-dotnet add package Umbraco.DoubleShore.HeadlessPreview
+dotnet add package DoubleShore.Umbraco.HeadlessPreview
 ```
 
 Or via NuGet Package Manager:
 ```
-Install-Package Umbraco.DoubleShore.HeadlessPreview
+Install-Package DoubleShore.Umbraco.HeadlessPreview
 ```
 
 ---

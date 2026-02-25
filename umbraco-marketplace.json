@@ -22,7 +22,7 @@
     "draft-mode",
     "decoupled"
   ],
-  "nugetPackageId": "Umbraco.DoubleShore.HeadlessPreview",
+  "nugetPackageId": "DoubleShore.Umbraco.HeadlessPreview",
   "sourcecodeUrl": "https://github.com/marcoteodoro/Umbraco.DoubleShore.HeadlessPreview",
   "documentationUrl": "https://github.com/marcoteodoro/Umbraco.DoubleShore.HeadlessPreview#readme",
   "issuesUrl": "https://github.com/marcoteodoro/Umbraco.DoubleShore.HeadlessPreview/issues",
