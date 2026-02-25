@@ -1,24 +1,29 @@
 ﻿import { draftMode } from 'next/headers';
+import Image from 'next/image';
+import { ContentRows } from '@/components/ContentRenderer';
 
 const UMBRACO_URL = process.env.UMBRACO_URL || 'http://localhost:5000';
 const UMBRACO_API_KEY = process.env.UMBRACO_API_KEY || '';
 
-async function getContent(path: string, preview: boolean) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type UmbracoContent = any;
+
+async function getContent(path: string, preview: boolean): Promise<UmbracoContent | null> {
   try {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
-    
+
     if (preview && UMBRACO_API_KEY) {
       headers['Api-Key'] = UMBRACO_API_KEY;
       headers['Preview'] = 'true';
     }
-    
+
     const res = await fetch(`${UMBRACO_URL}/umbraco/delivery/api/v2/content/item${path}`, {
       headers,
       cache: preview ? 'no-store' : 'force-cache',
     });
-    
+
     if (!res.ok) {
       console.log(`Content fetch failed: ${res.status}`);
       return null;
@@ -31,15 +36,138 @@ async function getContent(path: string, preview: boolean) {
   }
 }
 
-export default async function Home() {
-  const draft = await draftMode();
-  const content = await getContent('/', draft.isEnabled);
+async function getArticles(preview: boolean): Promise<UmbracoContent[]> {
+  try {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    if (preview && UMBRACO_API_KEY) {
+      headers['Api-Key'] = UMBRACO_API_KEY;
+      headers['Preview'] = 'true';
+    }
+
+    const res = await fetch(
+      `${UMBRACO_URL}/umbraco/delivery/api/v2/content?filter=contentType:article&take=10&sort=updateDate:desc`,
+      {
+        headers,
+        cache: preview ? 'no-store' : 'force-cache',
+      }
+    );
+
+    if (!res.ok) {
+      console.log(`Articles fetch failed: ${res.status}`);
+      return [];
+    }
+
+    const data = await res.json();
+    return data.items || [];
+  } catch (error) {
+    console.error('Error fetching articles:', error);
+    return [];
+  }
+}
+
+// Hero Section Component
+function HeroSection({ content }: { content: UmbracoContent }) {
+  const mainImage = content?.properties?.mainImage?.[0];
+  const imageUrl = mainImage?.url?.startsWith('/') ? `${UMBRACO_URL}${mainImage.url}` : mainImage?.url;
 
   return (
-    <main className="min-h-screen bg-[#f5f5ff]">
+    <div className="relative bg-[#2027b7] text-white overflow-hidden">
+      {imageUrl && (
+        <div className="absolute inset-0 opacity-30">
+          <Image
+            src={imageUrl}
+            alt={mainImage?.name || ''}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        </div>
+      )}
+      <div className="relative max-w-5xl mx-auto px-6 py-16 md:py-24">
+        <h1 className="text-3xl md:text-5xl font-bold mb-4">
+          {content?.properties?.title || content?.name}
+        </h1>
+        {content?.properties?.subtitle && (
+          <p className="text-xl md:text-2xl opacity-90">
+            {content.properties.subtitle}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Social Links Component
+function SocialLinks({ items }: { items: UmbracoContent[] }) {
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-3">
+      {items.map((item: UmbracoContent, index: number) => {
+        const icon = item?.content?.properties?.icon?.[0];
+        const link = item?.content?.properties?.link?.[0];
+        if (!link) return null;
+
+        const iconUrl = icon?.url?.startsWith('/') ? `${UMBRACO_URL}${icon.url}` : icon?.url;
+
+        return (
+          <a
+            key={index}
+            href={link.url}
+            title={link.title}
+            target={link.target || '_blank'}
+            className="w-10 h-10 bg-[#f5f5ff] hover:bg-[#2027b7] rounded-lg flex items-center justify-center transition-colors group"
+          >
+            {iconUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={iconUrl}
+                alt={icon?.name || ''}
+                className="w-5 h-5 group-hover:brightness-0 group-hover:invert"
+              />
+            ) : (
+              <span className="text-[#2027b7] group-hover:text-white text-sm">🔗</span>
+            )}
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
+export default async function Home() {
+  const draft = await draftMode();
+  
+  // Fetch content and articles in parallel
+  let content = await getContent('/home', draft.isEnabled);
+  if (!content) {
+    content = await getContent('/', draft.isEnabled);
+  }
+  
+  const articles = await getArticles(draft.isEnabled);
+
+  return (
+    <main className="min-h-screen bg-[#f5f5ff] flex flex-col">
+      {/* Preview Banner */}
+      {draft.isEnabled && (
+        <div className="bg-[#cfff5e] text-[#111111] px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-3">
+          <span className="w-2 h-2 bg-[#2027b7] rounded-full animate-pulse" />
+          Preview Mode Active
+          <a
+            href="/api/preview/exit"
+            className="ml-2 px-3 py-1 bg-[#111111] text-white rounded text-xs hover:bg-[#333]"
+          >
+            Exit Preview
+          </a>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white border-b border-[#e5e5ef]">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#2027b7] rounded-lg flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -48,113 +176,69 @@ export default async function Home() {
               </svg>
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-[#111111]">Headless Preview</h1>
+              <h1 className="text-lg font-semibold text-[#111111]">Headless Preview Demo</h1>
               <p className="text-xs text-[#6b7280]">by Double Shore</p>
             </div>
           </div>
-          <a 
-            href="https://double-shore.com" 
-            target="_blank"
-            className="text-sm text-[#2027b7] hover:underline"
-          >
+          <a href="https://double-shore.com" target="_blank" className="text-sm text-[#2027b7] hover:underline">
             double-shore.com →
           </a>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        {/* Status Card */}
-        <div className="bg-white rounded-2xl border border-[#e5e5ef] p-6 mb-8 shadow-sm">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className={`w-3 h-3 rounded-full ${draft.isEnabled ? 'bg-[#cfff5e] animate-pulse' : 'bg-[#e5e5ef]'}`} />
-              <div>
-                <p className="text-sm text-[#6b7280]">Preview Mode</p>
-                <p className={`font-medium ${draft.isEnabled ? 'text-[#2027b7]' : 'text-[#111111]'}`}>
-                  {draft.isEnabled ? 'Active' : 'Inactive'}
-                </p>
+      {content ? (
+        <>
+          {/* Hero */}
+          <HeroSection content={content} />
+
+          {/* Main Content */}
+          <div className="max-w-5xl mx-auto px-6 py-12 w-full">
+            {/* Social Links */}
+            {content?.properties?.socialIconLinks?.items && (
+              <div className="mb-8">
+                <SocialLinks items={content.properties.socialIconLinks.items} />
               </div>
+            )}
+
+            {/* Content Rows */}
+            {content?.properties?.contentRows?.items && (
+              <div className="bg-white rounded-2xl border border-[#e5e5ef] p-6 md:p-8 shadow-sm">
+                <ContentRows items={content.properties.contentRows.items} articles={articles} />
+              </div>
+            )}
+
+            {/* Debug: Raw JSON */}
+            <details className="mt-8 group">
+              <summary className="cursor-pointer text-xs text-[#6b7280] hover:text-[#2027b7] transition-colors">
+                View raw JSON (debug)
+              </summary>
+              <pre className="mt-3 bg-white p-4 rounded-lg text-xs overflow-auto text-[#333] border border-[#e5e5ef] max-h-96">
+                {JSON.stringify(content, null, 2)}
+              </pre>
+            </details>
+          </div>
+        </>
+      ) : (
+        <div className="max-w-5xl mx-auto px-6 py-12 flex-1">
+          <div className="bg-white rounded-2xl border border-[#e5e5ef] p-8 shadow-sm text-center">
+            <div className="w-16 h-16 bg-[#f5f5ff] rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-[#6b7280]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-            <div className="flex items-center gap-2 bg-[#f5f5ff] px-4 py-2 rounded-lg">
-              <span className="text-xs text-[#6b7280]">Umbraco:</span>
-              <code className="text-xs font-mono text-[#2027b7]">{UMBRACO_URL}</code>
+            <h2 className="text-xl font-semibold text-[#111111] mb-2">No Content Found</h2>
+            <p className="text-[#6b7280] mb-6">
+              Make sure Umbraco is running at {UMBRACO_URL} and has published content.
+            </p>
+            <div className="text-sm text-[#6b7280]">
+              <p className="mb-2">Try these commands to start Umbraco:</p>
+              <code className="bg-[#f5f5ff] px-3 py-1 rounded text-[#2027b7]">
+                cd demo/DemoUmbraco && dotnet run
+              </code>
             </div>
           </div>
         </div>
-
-        {/* Content Area */}
-        {content ? (
-          <div className="bg-white rounded-2xl border border-[#e5e5ef] overflow-hidden shadow-sm">
-            <div className="bg-[#2027b7] px-6 py-4">
-              <h2 className="text-white font-medium">Content from Umbraco</h2>
-            </div>
-            <div className="p-6">
-              <h3 className="text-2xl font-semibold text-[#111111] mb-4">{content.name}</h3>
-              {content.properties?.bodyText && (
-                <div 
-                  className="prose prose-sm max-w-none text-[#333]"
-                  dangerouslySetInnerHTML={{ __html: content.properties.bodyText }} 
-                />
-              )}
-              {content.properties?.title && (
-                <p className="mt-4 text-[#6b7280]">
-                  <span className="font-medium text-[#111111]">Title:</span> {content.properties.title}
-                </p>
-              )}
-              <details className="mt-6 group">
-                <summary className="cursor-pointer text-xs text-[#6b7280] hover:text-[#2027b7] transition-colors">
-                  View raw JSON
-                </summary>
-                <pre className="mt-3 bg-[#f5f5ff] p-4 rounded-lg text-xs overflow-auto text-[#333] border border-[#e5e5ef]">
-                  {JSON.stringify(content, null, 2)}
-                </pre>
-              </details>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-[#e5e5ef] overflow-hidden shadow-sm">
-            <div className="bg-[#cfff5e] px-6 py-4">
-              <h2 className="text-[#111111] font-medium">Getting Started</h2>
-            </div>
-            <div className="p-6">
-              <p className="text-[#6b7280] mb-6">
-                No content found at the root path. The Clean starter kit content is available - try accessing a specific page.
-              </p>
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-[#111111]">Quick Links:</p>
-                <div className="flex flex-wrap gap-2">
-                  <a href="/home" className="px-4 py-2 bg-[#f5f5ff] text-[#2027b7] rounded-lg text-sm hover:bg-[#2027b7] hover:text-white transition-colors">
-                    /home
-                  </a>
-                  <a href="/contact" className="px-4 py-2 bg-[#f5f5ff] text-[#2027b7] rounded-lg text-sm hover:bg-[#2027b7] hover:text-white transition-colors">
-                    /contact
-                  </a>
-                  <a href="/articles" className="px-4 py-2 bg-[#f5f5ff] text-[#2027b7] rounded-lg text-sm hover:bg-[#2027b7] hover:text-white transition-colors">
-                    /articles
-                  </a>
-                </div>
-              </div>
-              <div className="mt-8 pt-6 border-t border-[#e5e5ef]">
-                <p className="text-sm font-medium text-[#111111] mb-3">Test Preview Mode:</p>
-                <ol className="text-sm text-[#6b7280] space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 bg-[#2027b7] text-white rounded-full text-xs flex items-center justify-center">1</span>
-                    <span>Open Umbraco backoffice at <code className="text-[#2027b7]">https://localhost:5001/umbraco</code></span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 bg-[#2027b7] text-white rounded-full text-xs flex items-center justify-center">2</span>
-                    <span>Edit any content page</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="flex-shrink-0 w-5 h-5 bg-[#2027b7] text-white rounded-full text-xs flex items-center justify-center">3</span>
-                    <span>Click <strong>"Preview on Frontend"</strong> from the preview dropdown</span>
-                  </li>
-                </ol>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Footer */}
       <footer className="mt-auto border-t border-[#e5e5ef] bg-white">
